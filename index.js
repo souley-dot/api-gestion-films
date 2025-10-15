@@ -32,14 +32,22 @@ dbCon.connect(err=>{
 /////// Midillwares ////////////
 
 app.use(express.json())
-app.use(express.urlencoded({ extended: true }));
-
 
 ////// La route pour affiche tous les films ///////
 
 app.get("/films",(req,resp)=>{
 
-    resp.send(" Tous les films sont là !")
+    let sql= "SELECT * FROM film"
+
+    dbCon.query(sql,(err,result)=>{
+
+        if(err){
+
+            return resp.status(500).json({"Erreur":err.message})
+        }
+        resp.status(200).json({"Les film disponibles :":result})
+    })
+
 })
 
 /////////// La route POST pour ajouter un film /////
@@ -73,14 +81,17 @@ app.post("/ajoute/film",(req,resp)=>{
     })
 })
 /////// La route PUT pour la mise à jour des films //////
-/*
-app.put("/modifie/film/:id",(req,resp)=>{
 
-    console.log(req.body)
+app.put("/modifie/film/:id",(req,resp)=>{
 
      const id=parseInt(req.params['id'])
 
-     //// const { nom,titre,acteur,duree }=req.body
+      const { nom,titre,acteur,duree }=req.body
+
+      if(!nom || !titre || !acteur || !duree){
+
+        return resp.json({"erreur":"Données manquantes"})
+    }
 
      let sql=" SELECT * FROM film WHERE id=?"
      
@@ -91,63 +102,54 @@ app.put("/modifie/film/:id",(req,resp)=>{
 
             return resp.status(500).json({"erreur":err})
         }
+        if(result.length===0){
 
-        resp.status(200).json({result})
-
-        console.log(req.body)
-
-
-    
-})
-
-
-
-
-
-
-
-})
-*/
-
-
-
-app.put("/modifie/film/:id", (req, resp) => {
-    console.log("Body reçu :", req.body);
-
-    const id = parseInt(req.params.id);
-    const { nom, titre, acteur, duree } = req.body;
-
-    // Vérifie que les champs sont fournis
-    if (!nom || !titre || !acteur || !duree) {
-        return resp.status(400).json({ erreur: "Données manquantes" });
-    }
-
-    // Vérifie si le film existe
-    let sqlSelect = "SELECT * FROM film WHERE id = ?";
-    dbCon.query(sqlSelect, [id], (err, result) => {
-        if (err) {
-            return resp.status(500).json({ erreur: err.message });
+            return resp.status(404).json("Auncun film n'est trouvé")
         }
+       let sqlPut="UPDATE film SET nom=?,titre=?,acteur=?,duree=? WHERE id=?";
 
-        if (result.length === 0) {
-            return resp.status(404).json({ erreur: "Film non trouvé" });
-        }
+        dbCon.query(sqlPut,[nom,titre,acteur,duree,id],(erro,results)=>{
 
-        // Si le film existe → on le met à jour
-        let sqlUpdate = "UPDATE film SET nom = ?, titre = ?, acteur = ?, duree = ? WHERE id = ?";
-        dbCon.query(sqlUpdate, [nom, titre, acteur, duree, id], (err2) => {
-            if (err2) {
-                return resp.status(500).json({ erreur: err2.message });
+
+            if(erro){
+
+                return resp.status(500).json({"erreur":erro})
             }
+            resp.status(200).json({"Le film à été mis à jour":{
+             "id":id,
+             "nom":nom,
+             "titre":titre,
+             "acteur":acteur,
+             "duree":duree
+            
+            }})
 
-            resp.status(200).json({ message: "Film modifié avec succès !" });
-        });
-    });
-});
+        })       
+    })
+})
 
+/** La route de suppression de films */
 
+app.delete('/supprime/film/:id',(req,resp)=>{
 
+    let id=parseInt(req.params['id'])
 
+    let sql=" DELETE FROM film WHERE id=?";
+
+    dbCon.query(sql,[id],(err,result)=>{
+
+        if(err){
+
+            return resp.status(404).json({"Aucun film trouvré":err.message})
+        }
+        if(result.affectedRows===0){
+
+            return resp.status(404).json("Aucun film trouvé")
+        }
+        resp.status(200).json({"Film supprimé avec succès":result})
+    })
+
+})
 
 app.listen(port,()=>{
 
