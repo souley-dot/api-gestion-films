@@ -2,8 +2,11 @@
 const express=require("express")
 
 //////// Le port sur lequel nous allons le serveur va écouter /////
-const port =3000;
+const port =5000;
 
+///// Importation du module cors ////
+
+const cors=require('cors')
 ///// Création de l'application express //////////
 
 const app=express();
@@ -16,8 +19,13 @@ const config=require("./config");
 const mysql=require("mysql2");
 
 /////// Création de la connction à la base de données //////
-
-const dbCon=mysql.createConnection(config)
+const dbCon=mysql.createConnection({
+    host:config.myHost,
+    user:config.myUser,
+    password:config.myPassword,
+    database:config.myDatabase,
+    port :config.myPort
+})
 
 dbCon.connect(err=>{
 
@@ -30,8 +38,9 @@ dbCon.connect(err=>{
 
 
 /////// Midillwares ////////////
-
+app.use(cors())
 app.use(express.json())
+
 
 ////// La route pour affiche tous les films ///////
 
@@ -80,8 +89,9 @@ app.post("/ajoute/film",(req,resp)=>{
         )
     })
 })
-/////// La route PUT pour la mise à jour des films //////
 
+
+/////// La route PUT pour la mise à jour des films //////
 app.put("/modifie/film/:id",(req,resp)=>{
 
      const id=parseInt(req.params['id'])
@@ -153,5 +163,5 @@ app.delete('/supprime/film/:id',(req,resp)=>{
 
 app.listen(port,()=>{
 
-    console.log(`This server is running on:http://localhost:${port}`);
+    console.log(" Server is running !!!");
 })
